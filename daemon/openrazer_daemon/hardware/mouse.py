@@ -746,6 +746,48 @@ class RazerDiamondbackChroma(__RazerDeviceBrightnessSuspend):
     }
 
 
+class RazerDeathAdder3500Old(__RazerDevice):
+    """
+    Class for the Razer DeathAdder 3500 (the old one)
+    """
+    USB_VID = 0x1532
+    USB_PID = 0x0016
+    DEDICATED_MACRO_KEYS = True
+    METHODS = ['get_device_type_mouse', 'get_poll_rate', 'set_poll_rate',
+               'get_logo_active', 'set_logo_active', 'get_scroll_active', 'set_scroll_active']
+
+    DEVICE_IMAGE = None  # FIXME
+
+    def _suspend_device(self):
+        """
+        Suspend the device
+
+        Get the current brightness level, store it for later and then set the brightness to 0
+        """
+        self.suspend_args.clear()
+        self.suspend_args['active'] = (_da_get_logo_active(self), _da_get_scroll_active(self))
+
+        # Todo make it context?
+        self.disable_notify = True
+        _da_set_logo_active(self, False)
+        _da_set_scroll_active(self, False)
+        self.disable_notify = False
+
+    def _resume_device(self):
+        """
+        Resume the device
+
+        Get the last known brightness and then set the brightness
+        """
+        logo_active = self.suspend_args.get('active', (True, True))[0]
+        scroll_active = self.suspend_args.get('active', (True, True))[1]
+
+        self.disable_notify = True
+        _da_set_logo_active(self, logo_active)
+        _da_set_scroll_active(self, scroll_active)
+        self.disable_notify = False
+
+
 class RazerMamba2012Wireless(__RazerDeviceSpecialBrightnessSuspend):
     """
     Class for the Razer Mamba 2012 (Wireless)
