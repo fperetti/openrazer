@@ -89,63 +89,46 @@ struct razer_report razer_send_payload(struct usb_device *usb_dev, struct razer_
  */
 void deathadder3500_set_scroll_led_state(struct razer_mouse_device *device, unsigned int enabled)
 {
-    char data[4] = { 0 };
-
     if (enabled == 1) {
-        device->da3500_lighting_bitfield |= 0x02;
+        device->da3500.leds |= 0x02;
     } else {
-        device->da3500_lighting_bitfield &= ~(0x02);
+        device->da3500.leds &= ~(0x02);
     }
 
-    data[0] = device->da3500_poll_bitfield;
-    data[3] = device->da3500_lighting_bitfield;
-
     mutex_lock(&device->lock);
-    razer_send_control_msg_old_device(device->usb_dev, &data[0], 0x10, 0x00, 4, 3000, 3000);
+    razer_send_control_msg_old_device(device->usb_dev, &device->da3500, 0x10, 0x00, 4, 3000, 3000);
     mutex_unlock(&device->lock);
 }
 
 void deathadder3500_set_logo_led_state(struct razer_mouse_device *device, unsigned int enabled)
 {
-    char data[4] = { 0 };
-
     if (enabled == 1) {
-        device->da3500_lighting_bitfield |= 0x01;
+        device->da3500.leds |= 0x01;
     } else {
-        device->da3500_lighting_bitfield &= ~(0x01);
+        device->da3500.leds &= ~(0x01);
     }
 
-    data[0] = device->da3500_poll_bitfield;
-    data[3] = device->da3500_lighting_bitfield;
-
     mutex_lock(&device->lock);
-    razer_send_control_msg_old_device(device->usb_dev, &data[0], 0x10, 0x00, 4, 3000, 3000);
+    razer_send_control_msg_old_device(device->usb_dev, &device->da3500, 0x10, 0x00, 4, 3000, 3000);
     mutex_unlock(&device->lock);
 }
 
 void deathadder3500_set_poll_rate(struct razer_mouse_device *device, unsigned short poll_rate)
 {
-    char data[4] = { 0 };
-
     if (poll_rate == 1000) {
-        device->da3500_poll_bitfield = 1;
+        device->da3500.poll = 1;
     } else if (poll_rate == 500) {
-        device->da3500_poll_bitfield = 2;
+        device->da3500.poll = 2;
     } else if (poll_rate == 125) {
-        device->da3500_poll_bitfield = 3;
+        device->da3500.poll = 3;
     } else {
-        device->da3500_poll_bitfield = 2;
+        device->da3500.poll = 2;
     }
 
-    data[0] = device->da3500_poll_bitfield;
-    data[3] = device->da3500_lighting_bitfield;
-
     mutex_lock(&device->lock);
-    razer_send_control_msg_old_device(device->usb_dev, &data[0], 0x10, 0x00, 4, 3000, 3000);
+    razer_send_control_msg_old_device(device->usb_dev, &device->da3500, 0x10, 0x00, 4, 3000, 3000);
     mutex_unlock(&device->lock);
 }
-
-
 
 
 /*
@@ -687,7 +670,7 @@ static ssize_t razer_attr_read_poll_rate(struct device *dev, struct device_attri
 
     switch(device->usb_pid) {
     case USB_DEVICE_ID_RAZER_DEATHADDER_3500_OLD:
-        switch(device->da3500_poll_bitfield) {
+        switch(device->da3500.poll) {
         case 0x01:
             polling_rate = 1000;
             break;
@@ -1344,7 +1327,7 @@ static ssize_t razer_attr_read_scroll_led_state(struct device *dev, struct devic
         break;
 
     case USB_DEVICE_ID_RAZER_DEATHADDER_3500_OLD:
-        if((device->da3500_lighting_bitfield & 0x02) == 0x02) {
+        if((device->da3500.leds & 0x02) == 0x02) {
             return sprintf(buf, "1\n");
         }
         return sprintf(buf, "0\n");
@@ -1409,7 +1392,7 @@ static ssize_t razer_attr_read_logo_led_state(struct device *dev, struct device_
         break;
 
     case USB_DEVICE_ID_RAZER_DEATHADDER_3500_OLD:
-        if((device->da3500_lighting_bitfield & 0x01) == 0x01) {
+        if((device->da3500.leds & 0x01) == 0x01) {
             return sprintf(buf, "1\n");
         }
         return sprintf(buf, "0\n");
@@ -2078,8 +2061,10 @@ void razer_mouse_init(struct razer_mouse_device *dev, struct usb_interface *intf
     dev->orochi2011_poll = 500;
 
     // Setup default values for DeathAdder 3500
-    dev->da3500_lighting_bitfield = 3; // Lights up all lights
-    dev->da3500_poll_bitfield = 1; // Freq 1000
+    dev->da3500.leds = 3; // Lights up all lights
+    dev->da3500.dpi = 1; // 3500 DPI
+    dev->da3500.profile = 1; // Profile 1
+    dev->da3500.poll = 1; // Poll rate 1000
 }
 
 /**
