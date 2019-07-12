@@ -130,6 +130,23 @@ void deathadder3500_set_poll_rate(struct razer_mouse_device *device, unsigned sh
     mutex_unlock(&device->lock);
 }
 
+void deathadder3500_set_dpi(struct razer_mouse_device *device, unsigned short dpi)
+{
+    if (dpi == 450) {
+        device->da3500.dpi = 4;
+    } else if (dpi == 900) {
+        device->da3500.dpi = 3;
+    } else if (dpi == 1800) {
+        device->da3500.dpi = 2;
+    } else { // 3500
+        device->da3500.dpi = 1;
+    }
+
+    mutex_lock(&device->lock);
+    razer_send_control_msg_old_device(device->usb_dev, &device->da3500, 0x10, 0x00, 4, 3000, 3000);
+    mutex_unlock(&device->lock);
+}
+
 
 /*
  * New functions
@@ -844,6 +861,14 @@ static ssize_t razer_attr_write_mouse_dpi(struct device *dev, struct device_attr
 
     // So far I think imperator uses varstore
     switch(device->usb_pid) {
+    case USB_DEVICE_ID_RAZER_DEATHADDER_3500_OLD:
+        if(count == 0 || count == 1) {
+            deathadder3500_set_dpi(device, buf[0]);
+        } else {
+            printk(KERN_WARNING "razermouse: DPI requires 1 byte or 2 bytes\n");
+        }
+        return count;
+
     // Damn naga hex only uses 1 byte per x, y dpi
     case USB_DEVICE_ID_RAZER_NAGA_HEX_RED:
     case USB_DEVICE_ID_RAZER_NAGA_HEX:
@@ -936,6 +961,10 @@ static ssize_t razer_attr_read_mouse_dpi(struct device *dev, struct device_attri
 
     // So far I think imperator uses varstore
     switch(device->usb_pid) {
+    case USB_DEVICE_ID_RAZER_DEATHADDER_3500_OLD:
+        return sprintf(buf, "%u:%u\n", device->da3500.dpi, device->da3500.dpi);
+        break;
+
     case USB_DEVICE_ID_RAZER_OROCHI_2011:
         return sprintf(buf, "%u:%u\n", device->orochi2011_dpi, device->orochi2011_dpi);
         break;
@@ -2268,6 +2297,7 @@ static int razer_mouse_probe(struct hid_device *hdev, const struct hid_device_id
             break;
 
         case USB_DEVICE_ID_RAZER_DEATHADDER_3500_OLD:
+            CREATE_DEVICE_FILE(&hdev->dev, &dev_attr_dpi);
             CREATE_DEVICE_FILE(&hdev->dev, &dev_attr_poll_rate);
             CREATE_DEVICE_FILE(&hdev->dev, &dev_attr_scroll_led_state);
             CREATE_DEVICE_FILE(&hdev->dev, &dev_attr_logo_led_state);
@@ -2537,6 +2567,7 @@ static void razer_mouse_disconnect(struct hid_device *hdev)
             break;
 
         case USB_DEVICE_ID_RAZER_DEATHADDER_3500_OLD:
+            device_remove_file(&hdev->dev, &dev_attr_dpi);
             device_remove_file(&hdev->dev, &dev_attr_poll_rate);
             device_remove_file(&hdev->dev, &dev_attr_scroll_led_state);
             device_remove_file(&hdev->dev, &dev_attr_logo_led_state);
