@@ -132,6 +132,7 @@ void deathadder3500_set_poll_rate(struct razer_mouse_device *device, unsigned sh
 
 void deathadder3500_set_dpi(struct razer_mouse_device *device, unsigned short dpi)
 {
+    printk(KERN_WARNING "DA3500 DPI: %x\n", dpi);
     if (dpi == 450) {
         device->da3500.dpi = 4;
     } else if (dpi == 900) {
@@ -141,6 +142,7 @@ void deathadder3500_set_dpi(struct razer_mouse_device *device, unsigned short dp
     } else { // 3500
         device->da3500.dpi = 1;
     }
+    printk(KERN_WARNING "DA3500 DPI (internal): %x\n", device->da3500.dpi);
 
     mutex_lock(&device->lock);
     razer_send_control_msg_old_device(device->usb_dev, &device->da3500, 0x10, 0x00, 4, 3000, 3000);
