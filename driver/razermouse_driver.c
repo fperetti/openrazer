@@ -864,7 +864,7 @@ static ssize_t razer_attr_write_mouse_dpi(struct device *dev, struct device_attr
     // So far I think imperator uses varstore
     switch(device->usb_pid) {
     case USB_DEVICE_ID_RAZER_DEATHADDER_3500_OLD:
-        if(count == 0 || count == 1) {
+        if(count == 1 || count == 2) {
             deathadder3500_set_dpi(device, buf[0]);
         } else {
             printk(KERN_WARNING "razermouse: DPI requires 1 byte or 2 bytes\n");
